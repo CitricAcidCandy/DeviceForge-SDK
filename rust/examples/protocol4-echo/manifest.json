@@ -1,0 +1,34 @@
+{
+  "manifest_version": 1,
+  "id": "protocol4-echo",
+  "version": "0.1.0",
+  "name": "Rust协议4回显",
+  "description": "独立公共SDK和协议4运行库的最小回显示例。",
+  "components": [
+    {
+      "kind": "server",
+      "files": ["dist/deviceforge-protocol4-echo.exe"],
+      "entrypoints": {
+        "win32-x64": {
+          "runtime": "native",
+          "path": "dist/deviceforge-protocol4-echo.exe"
+        }
+      },
+      "plugin": {
+        "protocol_version": 4,
+        "operations": [
+          {
+            "name": "echo",
+            "title": "回显消息",
+            "input_schema": {
+              "type": "object",
+              "properties": { "message": { "type": "string", "maxLength": 4096 } },
+              "required": ["message"],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 1,
+  "id": "sdk_fullstack_echo",
+  "version": "0.1.0",
+  "name": "SDK前后端回显",
+  "description": "公开浏览器SDK与Node协议1配套示例",
+  "market": {
+    "summary": "单清单、显式提交和任务终态查询",
+    "keywords": ["SDK", "示例", "前后端"],
+    "categories": ["function", "integration"],
+    "applies_to": ["deviceforge"],
+    "supports_mcp": "server",
+    "supports_agent": true,
+    "restart_policy": "none",
+    "license": "MIT",
+    "visibility": "internal"
+  },
+  "components": [
+    {
+      "kind": "server",
+      "root": "dist",
+      "files": ["server"],
+      "entrypoints": { "any": { "runtime": "node", "path": "server/entry.mjs" } },
+      "plugin": {
+        "protocol_version": 1,
+        "operations": [{
+          "name": "echo",
+          "title": "SDK示例回显",
+          "input_schema": {
+            "type": "object",
+            "properties": { "message": { "type": "string", "maxLength": 1000 } },
+            "required": ["message"],
+            "additionalProperties": false
+          }
+        }]
+      }
+    },
+    {
+      "kind": "browser",
+      "root": "dist",
+      "files": ["browser"],
+      "entrypoints": { "any": { "runtime": "browser", "path": "browser/index.js" } },
+      "plugin": { "api_version": 2 }
+    }
+  ]
+}

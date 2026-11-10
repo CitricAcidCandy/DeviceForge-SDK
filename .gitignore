@@ -1,0 +1,13 @@
+**/node_modules/
+**/target/
+/.cache/
+/artifacts/
+/release-output/
+/browser/*/dist/
+/browser/*/lib/
+/examples/*/dist/
+/rust/examples/*/dist/
+*.log
+.env
+.env.*
+!.env.example

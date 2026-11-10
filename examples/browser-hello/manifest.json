@@ -1,0 +1,25 @@
+{
+  "manifest_version": 1,
+  "id": "sdk_browser_hello",
+  "version": "0.1.0",
+  "name": "SDK浏览器问候",
+  "description": "仅使用公开SDK的独立浏览器插件",
+  "market": {
+    "summary": "公开SDK页面贡献与独立构建示例",
+    "keywords": ["SDK", "示例"],
+    "categories": ["function"],
+    "applies_to": ["deviceforge"],
+    "supports_mcp": "none",
+    "supports_agent": false,
+    "restart_policy": "none",
+    "license": "MIT",
+    "visibility": "internal"
+  },
+  "components": [{
+    "kind": "browser",
+    "root": "dist",
+    "files": ["browser"],
+    "entrypoints": { "any": { "runtime": "browser", "path": "browser/index.js" } },
+    "plugin": { "api_version": 2 }
+  }]
+}

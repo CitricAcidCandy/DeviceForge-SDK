@@ -1,0 +1,28 @@
+{
+  "name": "deviceforge-sdk-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.18.0" },
+  "workspaces": ["browser/sdk", "browser/tools", "browser/contracts"],
+  "scripts": {
+    "build:sdk": "node browser/sdk/scripts/package.ts",
+    "build:tools": "tsc -p browser/tools/tsconfig.json",
+    "build": "npm run build:sdk && npm run build:tools",
+    "pack:browser": "npm run build && node browser/pack.ts",
+    "prepare:release": "node scripts/prepare-release.ts",
+    "check": "tsc -p browser/tools/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "clsx": "2.1.1",
+    "it-tar": "6.0.6",
+    "radix-ui": "1.8.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "~5.9.0"
+  }
+}

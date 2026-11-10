@@ -1,0 +1,12 @@
+{
+  "name": "deviceforge-sdk-fullstack-echo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": { "build": "node build.ts" },
+  "devDependencies": {
+    "@deviceforge/plugin-sdk": "file:../../browser/sdk",
+    "@deviceforge/plugin-tools": "file:../../browser/tools"
+  }
+}
