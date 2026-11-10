@@ -2,6 +2,24 @@
 
 公开仓库为`https://github.com/CitricAcidCandy/DeviceForge-SDK`，发行入口为`https://github.com/CitricAcidCandy/DeviceForge-SDK/releases`。仓库创建、源码推送和附件上传各是独立动作，应以实际可访问状态及发行清单为准。没有真实附件时，不将包名或发行入口描述成已交付下载。
 
+## v0.1.0 公开发行
+
+[DeviceForge SDK v0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)已于2026-11-10发布。开发者可直接下载以下材料，无需取得宿主源码。
+
+| 附件 | 字节数 | 内容与适用范围 |
+| --- | ---: | --- |
+| [deviceforge-plugin-sdk-0.1.0.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz) | 19,096 | 浏览器SDK v2，ESM及TypeScript声明 |
+| [deviceforge-plugin-tools-0.1.1.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz) | 22,677 | 浏览器构建及共享服务契约生成工具 |
+| [deviceforge-contracts-0.1.0.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-contracts-0.1.0.tgz) | 18,576 | 公开HTTP类型快照 |
+| [deviceforge-sdk-sources-0.1.0.zip](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-sdk-sources-0.1.0.zip) | 384,638 | 三个Rust公共库、协议4运行库与示例、浏览器公开源码、锁文件和中文指南 |
+| [deviceforge-cli-0.1.0.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz) | 24,224,285 | Windows x64配套CLI，支持`plugin pack`及格式2离线包 |
+| [manifest.json](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/manifest.json) | 1,757 | 版本、平台、依赖、源码修订及五份开发材料的SHA-256 |
+| [SHA256SUMS.txt](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/SHA256SUMS.txt) | 490 | 五份开发材料的SHA-256校验清单 |
+
+2026-11-10已用无登录、无Cookie的独立请求读取全部七份附件，均返回HTTP 200，实际字节数和SHA-256全部与本地发行文件一致。发行源码固定为`e1aa53c52381bcdebf8883e99ab04491b88cb771`，后续文档更新独立提交。
+
+清单中的`state: prepared`记录材料生成时的本地准备状态，公开发布状态以以上发行页为准。Node.js要求22.18以上，Rust源码使用edition 2024；第三方依赖由包声明及锁文件指定，通过正常npm/Cargo渠道取得。当前提供GitHub附件渠道，尚未发布npm或crates.io；本版本CLI适用Windows x64。
+
 ## 所需材料
 
 | 开发目标 | 材料 | 使用方式 |
