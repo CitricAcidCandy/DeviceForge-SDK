@@ -6,7 +6,7 @@
   "engines": { "node": ">=22.18.0" },
   "scripts": { "build": "node build.ts" },
   "devDependencies": {
-    "@deviceforge/plugin-sdk": "file:../../browser/sdk",
-    "@deviceforge/plugin-tools": "file:../../browser/tools"
+    "@deviceforge/plugin-sdk": "https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz",
+    "@deviceforge/plugin-tools": "https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz"
   }
 }

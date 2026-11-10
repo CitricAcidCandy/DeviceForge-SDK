@@ -1,0 +1,10 @@
+[package]
+name = "deviceforge-plugin-guide"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "DeviceForge 公开插件开发指南的编译期正文"
+
+[lib]
+path = "src/lib.rs"

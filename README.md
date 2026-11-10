@@ -8,7 +8,7 @@
 
 | 目录 | 内容 |
 | --- | --- |
-| rust/ | apk-plugin-sdk、deviceforge-plugin-runtime及其公共依赖 |
+| rust/ | apk-plugin-sdk、deviceforge-plugin-runtime、指南正文库及其公共依赖 |
 | browser/sdk/ | 浏览器SDK v2及其ESM/TypeScript发行构建 |
 | browser/tools/ | 独立浏览器构建与服务契约生成工具 |
 | browser/contracts/ | 公开HTTP接口生成类型快照 |
@@ -30,7 +30,15 @@
 
 浏览器SDK、Rust协议、CLI和离线包格式分别版本化，不能用其中一个版本号推断其他协议。
 
-源码仓库：[CitricAcidCandy/DeviceForge-SDK](https://github.com/CitricAcidCandy/DeviceForge-SDK)。预编译开发包及版本清单见[发行页](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases)；仅以发行页实际附件为准，源码标签不表示npm或crates.io已发布。
+源码仓库：[CitricAcidCandy/DeviceForge-SDK](https://github.com/CitricAcidCandy/DeviceForge-SDK)。[v0.1.0 发行](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)已有七份可下载附件，完整直链、大小、SHA-256及平台说明见[开发材料获取](docs/distribution.md)。尚未发布 npm／crates.io。
+
+正常插件工程直接安装固定发行 URL，无需先构建本 SDK 或将它放在宿主旁边：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz
+```
+
+Rust 工程用公开 Git 地址及固定完整修订声明依赖，示例见[服务器 SDK 指南](docs/backend/sdk.md)。两种方式均需正常获取各自清单声明的第三方依赖，公开归档不含完整离线缓存。
 
 ## 从源码准备开发包
 
@@ -49,17 +57,11 @@ cargo run --locked -p deviceforge-protocol4-echo --example protocol4-smoke
 
 中文指南入口为[开发文档](docs/README.md)，示例见[examples](examples/)。浏览器SDK与构建工具可单独使用；打包格式2插件时，另安装与本机平台配套的DeviceForge CLI。
 
-## 宿主开发时的目录
+## 宿主消费方式
 
-宿主工程与本仓库默认同级放置：
+宿主的浏览器包通过固定 HTTPS TGZ 与锁文件消费，Rust 公共库及 `deviceforge-plugin-guide` 通过公开 Git 地址和完整修订消费。宿主正常构建不要求相邻 SDK 目录、源码路径别名或本仓库预先生成 `lib/dist`。只有修改 SDK 自身时才需要单独检出本仓库。
 
-```text
-Rust/
-  DeviceForge/
-  DeviceForge-SDK/
-```
-
-先在SDK仓库执行`npm ci`及`npm run pack:browser`，再安装宿主依赖。浏览器宿主消费公开包出口；Rust宿主消费三个公共crate；MCP指南在宿主编译时嵌入，不要求已发行程序运行时读取本仓库。
+`deviceforge-plugin-guide` 在自身编译时嵌入公开正文，宿主不再从开发机目录定位文档。新正文知识版本为5；已运行程序仍返回其编译时版本，更新源码不等于运行服务已经更新。公开 v0.1.0 标签及附件保持不可变，指南及宿主依赖修复由后续固定 Git 修订提供。
 
 ## 边界
 

@@ -2,7 +2,30 @@
 
 ## 独立 SDK 与新增契约的交付
 
-类型开发包 `@deviceforge/plugin-sdk@0.1.0` 的发行文件为 `deviceforge-plugin-sdk-0.1.0.tgz`，尚未发布 npm registry。SDK和构建工具由独立 DeviceForge-SDK 工程生成，公开源码入口为 `https://github.com/CitricAcidCandy/DeviceForge-SDK`，开发包入口为该仓库的 Releases，公开发布是否完成须核对实际版本和可下载附件；没有附件时按SDK工程说明构建，不访问宿主源码。取得文件后，在自己的独立工程执行 `npm install --save-dev ./deviceforge-plugin-sdk-0.1.0.tgz`；无须运行宿主生成器。公开主入口包含 `extensions.points`、`UiAccess`、`PluginTransport`、`DataAccess` 等契约，JSON 守卫另有 `@deviceforge/plugin-sdk/json` 子入口。完整类型的 peer 配套依赖以 TGZ 内 `package.json` 为准，离线时一并准备。
+SDK 与工具已在 [v0.1.0 公开发行](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)提供可直接下载的附件，尚未发布 npm registry。正常工程使用固定 HTTPS URL 和锁文件，不依赖宿主源码或同级 SDK 检出：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz
+```
+
+| 材料 | 字节 | SHA-256 |
+| --- | ---: | --- |
+| [浏览器 SDK 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz) | 19,096 | `0be9e1ff26e647589a9facf6d61aafceba4ad8654f4da86f60054512d9208f53` |
+| [构建工具 0.1.1](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz) | 22,677 | `aa35fd46a39b3275a65499020bd93d4c4e02d138d8fab37864a7708c53218a01` |
+| [公开 HTTP 类型 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-contracts-0.1.0.tgz) | 18,576 | `53ab200f3bc04515d58e43edc8eaae1b47330bc720e348c32e68df85e661bb8b` |
+| [Rust 运行库与示例源码 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-sdk-sources-0.1.0.zip) | 384,638 | `fdcfd9d29d4cb01860e838b1841097e64c163d36a09da49cf6f2ec4538d1afa8` |
+| [Windows x64 CLI 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz) | 24,224,285 | `5ce74e97abfe689462b1bba76b82088584a6400875c57f06089c1141f61d6b11` |
+
+[manifest.json](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/manifest.json)列出平台和配套依赖，[SHA256SUMS.txt](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/SHA256SUMS.txt)列出校验值。Node.js 要求 22.18 以上；Rust 使用 edition 2024；此 CLI 仅适用于 Windows x64。第三方依赖由包清单和锁文件指定，需通过正常 npm／Cargo 渠道获取，TGZ 不含完整离线缓存。CLI 在自己的工程安装并核对帮助，不需要宿主源码：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz
+npx --no-install deviceforge --help
+```
+
+其他平台不要使用本版 Windows 程序。
+
+SDK 公开主入口包含 `extensions.points`、`UiAccess`、`PluginTransport`、`DataAccess` 等契约，另有 `/json`、`/models`、`/slots` 子入口。完整类型的 peer 配套依赖以 TGZ 内 `package.json` 为准，离线时一并准备。
 
 SDK TGZ 是开发依赖，不是可安装的 DeviceForge 插件包，不上传到浏览器插件安装入口。业务插件仍只维护一份 `manifest.json`，按需包含浏览器、服务器和共享依赖，构建后通过原 CLI 生成分发文件；新增页面／视图／数据源在插件运行时按公开契约登记，不增加第二份手工宿主目录。React 与宿主 UI 的浏览器入口按下文 external 规则处理，不能把类型包当成第二套 React 运行时。
 
@@ -12,9 +35,9 @@ SDK TGZ 是开发依赖，不是可安装的 DeviceForge 插件包，不上传�
 
 ## 独立浏览器构建工具
 
-已提供真实本地 `deviceforge-plugin-tools-0.1.1.tgz`，公开包名为 `@deviceforge/plugin-tools@0.1.1`，未发布 registry。旧 `0.1.0` 归档不含下述契约生成入口。部署者须交付所需版本文件及包内声明的第三方依赖，不能只给出包名或要求访问宿主目录。工具要求 Node.js 22.18 以上，固定使用 Vite、React 编译插件和 Tailwind；实际版本以包内依赖为准。
+上表的 `deviceforge-plugin-tools-0.1.1.tgz` 对应 `@deviceforge/plugin-tools@0.1.1`，未发布 registry。旧 `0.1.0` 归档不含下述契约生成入口。工具要求 Node.js 22.18 以上，使用 Vite、React 编译插件和 Tailwind；实际版本以包内依赖为准。
 
-将 SDK 与工具 TGZ 放到自己工程的 `vendor/` 并声明 `file:./vendor/文件名`。安装后，在自己的 TypeScript 脚本调用：
+按上面的固定 HTTPS URL 安装 SDK 与工具后，在自己的 TypeScript 脚本调用。完全离线时也可随工程交付已校验 TGZ 和所需依赖缓存；不要提交指向开发机 SDK 源码目录的 `file:` 或链接：
 
 ```typescript
 import { fileURLToPath } from 'node:url';

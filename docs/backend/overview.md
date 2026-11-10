@@ -8,6 +8,8 @@
 
 知识范围包括开发流程、公开能力与接口、约束、生命周期、调试和发布要求。`overview` 介绍能力与开发顺序，`manifest` 描述声明约束，`sdk` 提供公开接口，`lifecycle` 说明运行和清理，`examples` 提供示例，`dependencies` 描述共享依赖，`packaging` 说明发布要求，`validation` 提供调试流程与结果核对。正文直接交付，不包含宿主源码位置或文档物理地址。
 
+Rust SDK、协议4运行库及示例已在 [DeviceForge SDK v0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)公开。`sdk` 主题给出固定 Git 修订的 Cargo 依赖及源码 ZIP；`packaging` 给出实际 Windows x64 CLI 附件、大小和 SHA-256，配套浏览器材料可通过 `target:'fullstack'` 一起取得。无需宿主源码或同级 SDK 目录，尚未发布 npm／crates.io。
+
 ## 能力与边界
 
 服务器插件运行于独立进程，可使用 Rust、Node.js、Python、Go 等语言，通过公开 JSON 协议贡献任务操作；可声明产物、设备提供者、性能来源和独立交互会话。普通操作注册为 `plugin.<插件ID>.<操作名>`，HTTP 和 MCP 共用同一操作目录、输入校验与任务生命周期。插件不能直接引用宿主领域、应用、基础设施、数据库或私有路由。

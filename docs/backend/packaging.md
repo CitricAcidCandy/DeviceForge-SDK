@@ -2,7 +2,16 @@
 
 ## 单一开发清单流程（推荐）
 
-安装部署者提供、帮助中含 `plugin pack` 的 DeviceForge CLI 发行包后，在自己的工程维护 manifest.json（manifest_version:1）。完整结构和 market 全部字段查询本指南 manifest 主题；不假设 npm registry 已发布此 CLI，不需要宿主源码。
+已公开 [Windows x64 DeviceForge CLI 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz)：24,224,285 字节，SHA-256 `5ce74e97abfe689462b1bba76b82088584a6400875c57f06089c1141f61d6b11`，要求 Node.js 22.18 以上。它实际支持 `plugin pack` 和格式2离线包，尚未发布 npm registry；其他系统不要使用本版 Windows 二进制。在自己的工程安装固定附件并核对帮助：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz
+npx --no-install deviceforge plugin --help
+```
+
+版本和配套依赖见 [manifest.json](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/manifest.json)，摘要见 [SHA256SUMS.txt](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/SHA256SUMS.txt)。Rust 运行库及可运行示例的公开源码 ZIP、固定 Git Cargo 用法查询 `sdk`；配套浏览器 SDK 和构建工具的直接安装命令查询 `target:'frontend',topic:'packaging'`。第三方依赖通过正常 npm／Cargo 渠道取得，不要求访问宿主源码。
+
+安装后在自己的工程维护 manifest.json（manifest_version:1）。完整结构和 market 全部字段查询本指南 manifest 主题。以下命令使用已安装的 `deviceforge` 可执行文件；局部安装可加 `npx --no-install` 前缀。
 
 ```powershell
 deviceforge plugin pack manifest.json --out dist-plugin --platform win32-x64
@@ -47,7 +56,7 @@ guide-echo/
 
 ## 生成与核对归档
 
-TypeScript前后端配套工程可选用实际本地发行的 `@deviceforge/plugin-tools@0.1.1`。它的 `generatePluginContracts(manifest)` 从唯一清单的 `services.provided` 生成共享类型、Schema、服务引用和薄提交端，不要求宿主源码或内部生成器；部署者须另行交付真实TGZ及依赖，不能假定registry已发布。详细独立工程用法继续查询 `target:'frontend', topic:'packaging'`。
+TypeScript前后端配套工程可选用已公开 [@deviceforge/plugin-tools@0.1.1 TGZ](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz)。它的 `generatePluginContracts(manifest)` 从唯一清单的 `services.provided` 生成共享类型、Schema、服务引用和薄提交端，不要求宿主源码或内部生成器；未发布 registry，使用固定附件 URL 和锁文件。详细独立工程用法及配套依赖继续查询 `target:'frontend', topic:'packaging'`。
 
 生成的提交端只调用公开服务器服务提交接口一次，原样返回Job回执；受理不等于成功，查询、取消和未知结果仍遵守本主题对应协议。生成类型不替代服务器运行期Schema校验；本工具不生成Rust实现或新服务执行器，Rust组件继续使用原公开SDK。
 

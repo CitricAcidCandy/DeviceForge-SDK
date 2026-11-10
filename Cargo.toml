@@ -3,6 +3,7 @@ members = [
     "rust/plugin-sdk",
     "rust/plugin-runtime",
     "rust/plugin-dependencies",
+    "rust/plugin-guide",
     "rust/examples/protocol4-echo",
 ]
 resolver = "2"
@@ -21,6 +22,7 @@ tokio-util = { version = "0.7", features = ["rt", "io"] }
 apk-plugin-sdk = { version = "0.1.0", path = "rust/plugin-sdk" }
 deviceforge-plugin-runtime = { version = "0.1.0", path = "rust/plugin-runtime" }
 deviceforge-plugin-dependencies = { version = "0.1.0", path = "rust/plugin-dependencies" }
+deviceforge-plugin-guide = { version = "0.1.0", path = "rust/plugin-guide" }
 
 # 开发与测试复用有限的生成物，不保留大型调试信息或增量缓存。
 [profile.dev]

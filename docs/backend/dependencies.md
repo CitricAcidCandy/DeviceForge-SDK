@@ -2,6 +2,8 @@
 
 依赖属于发布元数据，不是市场卡片字段。官方、第三方、原生和脚本服务器组件使用同一契约；无依赖可声明空数组。宿主不按插件名单识别工具，不安装开发期 Cargo/npm 依赖。
 
+开发期 Rust 公共库可按 `sdk` 主题的公开 Git 地址和固定修订获取；浏览器 SDK、构建工具、源码示例和 Windows x64 CLI 已有 [v0.1.0 公开附件](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)，直接下载和校验方式查询 `packaging`。开发材料不通过下文运行期工具供应目录安装；供应目录读取失败不能代替 SDK 文件是否可下载的检查。
+
 ## 声明与定位
 
 独立组件包根携带 `dependencies.json`；完整功能采用 `release.json` 的 `format_version:2,host_api_version:2`，在 `dependencies` 放入同一对象。组件仍为便携 ZIP/TGZ。v1 包和安装记录保留可读兼容，不改写历史原包。

@@ -8,7 +8,17 @@
 - 无法确认原因时明确写“目前无法确认具体原因”，不能凭通用退出码猜测。受控只读辨因继承原调用的取消和期限，不得重发启动、安装等有副作用动作。
 - 清理未确认只说明对应任务的风险，不能提示先恢复整个插件才允许无关操作。保留机器错误码、任务和日志关联；不透出任意工具输出、凭据、私有路径或请求体，不改写历史日志。
 
-插件通过公开 JSON 协议接入，无需获取宿主源码。Rust 公共库为 `apk-plugin-sdk` 与 `deviceforge-plugin-runtime`，其公共依赖和协议4示例一并在独立 DeviceForge-SDK 工程维护。公开源码入口为 `https://github.com/CitricAcidCandy/DeviceForge-SDK`，开发包入口为该仓库的 Releases，是否已发布以实际版本附件和校验清单为准；取得SDK工程后，按该工程的Cargo工作区或独立开发包接入。当前不假设这些库已发布到 crates.io，也不假设存在官方 Node SDK；未取得开发包时可使用本指南 `examples` 中无 SDK 依赖的完整 Node.js 示例，不应猜测下载地址或要求访问宿主仓库。
+插件通过公开 JSON 协议接入，无需获取宿主源码。Rust 公共库 `apk-plugin-sdk`、`deviceforge-plugin-runtime` 及其公共依赖和协议4示例由独立 [DeviceForge-SDK](https://github.com/CitricAcidCandy/DeviceForge-SDK) 维护，尚未发布 crates.io。在自己的 Cargo 工程用公开 Git 地址与固定完整修订接入：
+
+```toml
+[dependencies]
+apk-plugin-sdk = { git = "https://github.com/CitricAcidCandy/DeviceForge-SDK.git", rev = "e1aa53c52381bcdebf8883e99ab04491b88cb771", version = "0.1.0" }
+deviceforge-plugin-runtime = { git = "https://github.com/CitricAcidCandy/DeviceForge-SDK.git", rev = "e1aa53c52381bcdebf8883e99ab04491b88cb771", version = "0.1.0" }
+```
+
+Cargo 会解析同一修订的公开配套库；提交生成的 Cargo.lock，不需要把 SDK 克隆到宿主旁边，也不依赖开发机绝对路径。上述修订对应已发布 v0.1.0，Rust 需支持 edition 2024；正常 Cargo 渠道获取 serde、Tokio 等声明依赖。可运行协议4示例及完整公共库另有 [deviceforge-sdk-sources-0.1.0.zip](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-sdk-sources-0.1.0.zip)，384,638 字节，SHA-256 `fdcfd9d29d4cb01860e838b1841097e64c163d36a09da49cf6f2ec4538d1afa8`。源码归档含公开锁文件，未包含完整离线 Cargo 缓存。
+
+没有官方 Node SDK。仅使用公开 JSON 协议时可直接采用本指南 `examples` 的完整 Node.js 示例。浏览器 SDK、工具和 CLI 的公开附件、校验清单及安装方法继续查询 `target:'fullstack',topic:'packaging'`，不要求访问宿主仓库或内部生成器。
 
 ## 前后端配套与开放界面
 

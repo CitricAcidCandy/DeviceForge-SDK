@@ -14,7 +14,7 @@ SDK v2 已增加可选 `extensions.points`、`ui`、`transport` 和 `data`：插
 
 页面、工作区与实例通过公开目录组合，实际界面以当前目录和视图提供者为准。`ui.register/open` 完成登记与模型变更，仍须由外壳或布局渲染器消费；默认外壳支持导航与顶栏/侧栏/底栏贡献，全局外壳使用 `host.shell@1` 显式替换。旧面板、`modules` 路由和开放槽位继续兼容，不把类型或登记成功当作完整页面体验验收。具体组合、资源清理及当前 SDK TGZ 契约查询 `sdk` 和 `lifecycle` 主题。
 
-独立类型包为 `@deviceforge/plugin-sdk@0.1.0`，文件名为 `deviceforge-plugin-sdk-0.1.0.tgz`，尚未发布 npm registry。SDK、构建工具、指南和示例在独立的 DeviceForge-SDK 工程维护；公开源码入口为 `https://github.com/CitricAcidCandy/DeviceForge-SDK`，开发包入口为该仓库的 Releases，当前公开发布状态以实际可访问的版本、附件和校验清单为准。取得该工程后可按其说明独立构建，不需要宿主源码。SDK 是开发依赖，插件仍维护一份 `manifest.json`，前后端组件共享完整发布身份，不需要改宿主清单才能登记这些公开能力。
+独立类型包为 `@deviceforge/plugin-sdk@0.1.0`，已在 [v0.1.0 公开发行](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)提供真实附件，尚未发布 npm registry。直接安装 [SDK TGZ](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz)及 [构建工具 0.1.1 TGZ](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz)，不需要宿主或相邻 SDK 源码目录。版本、大小、SHA-256、CLI 与 Rust 材料的完整入口查询 `packaging` 主题。SDK 是开发依赖，插件仍维护一份 `manifest.json`，前后端组件共享完整发布身份，不需要改宿主清单才能登记这些公开能力。
 
 ## 能力与职责
 

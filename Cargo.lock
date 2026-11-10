@@ -50,6 +50,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "deviceforge-plugin-guide"
+version = "0.1.0"
+
+[[package]]
 name = "deviceforge-plugin-runtime"
 version = "0.1.0"
 dependencies = [

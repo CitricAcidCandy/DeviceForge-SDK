@@ -1,5 +1,7 @@
 # 浏览器插件依赖与共享复用
 
+开发期 SDK 和工具使用固定 [v0.1.0 公开附件](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/v0.1.0)及 npm 锁文件取得；具体直链、大小和 SHA-256 查询 `packaging`。这些 npm 开发依赖与下文运行期 `dependencies.json` 工具声明不同，不将 SDK 源码路径交给宿主供应系统解析，也不要求部署者拥有相邻 SDK 仓库。
+
 浏览器插件、独立服务器组件和完整功能共用公开依赖声明。独立浏览器包在包根包含 `dependencies.json`，完整功能在 `release.json(format_version:2,host_api_version:2)` 的 `dependencies` 中声明。工具描述格式独立为 `format_version:1`；无工具时写 `{"format_version":1,"dependencies":[]}`。
 
 声明字段包括稳定 `id`、`name`、`version_requirement`、`required`、`entries`、`requires`、`discovery`、`probe`、`sources`、`bindings`。字段和示例以同主题后端指南及公开 `apk_plugin_sdk::dependencies` 为准；不要复制私有服务器类型或只在市场卡片添加工具信息。

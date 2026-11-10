@@ -42,11 +42,17 @@ ui.updatePage('sample.page', { operations: ['sample.read', 'sample.write'] });
 
 更新仅允许 `title/navigation/operations/taskPolicy`，并继续校验、复制和冻结公开目录。不能更改路由、工作区或挂载函数；只能更新当前所属作用域登记的页面，旧代或已经撤销的作用域不能覆盖新登记。原登记的释放句柄仍撤销更新后的页面。旧 SDK v2 宿主可以不提供此能力，插件须检查；缺省不代表动态声明已生效。
 
-`updatePage` 和扩展点只读 `selection` 已包含在本批重新生成的本地SDK归档声明中；同为0.1.0的早期归档和运行中指南不能据此视为已更新，须以实际取得的SDK类型、字节摘要和宿主能力为准。宿主不支持时按可选能力处理，不调用私有接口兜底。
+`updatePage` 和扩展点只读 `selection` 已包含在下述公开发行的 SDK 归档声明中；同为0.1.0的早期归档和运行中指南不能据此视为已更新，须以实际取得的SDK类型、字节摘要和宿主能力为准。宿主不支持时按可选能力处理，不调用私有接口兜底。
 
 ## 取得 SDK
 
-已提供 `@deviceforge/plugin-sdk@0.1.0` 的本地 TGZ，尚未发布 npm registry。唯一源码和打包入口已迁入独立 DeviceForge-SDK 工程，发行入口为 `https://github.com/CitricAcidCandy/DeviceForge-SDK/releases`；以实际存在的版本、附件和SHA-256清单为准，没有附件时按SDK工程说明构建，不将发行入口本身视为下载完成。开发者取得实际文件 `deviceforge-plugin-sdk-0.1.0.tgz` 后，可在自己的工程运行 `npm install --save-dev ./deviceforge-plugin-sdk-0.1.0.tgz`。包内已包含 ESM 与类型声明，不需要任何宿主生成器。UI 完整类型所需的 React、Radix 和 clsx 类型配套依赖在包的 `peerDependencies` 中明确列出，离线开发时一并预备。
+`@deviceforge/plugin-sdk@0.1.0` 已公开发行，直接获取 [deviceforge-plugin-sdk-0.1.0.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz)：19,096 字节，SHA-256 为 `0be9e1ff26e647589a9facf6d61aafceba4ad8654f4da86f60054512d9208f53`。尚未发布 npm registry；在自己的工程安装固定 HTTPS URL：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz
+```
+
+包内已包含 ESM、类型声明及 `/json`、`/models`、`/slots` 子入口，不需要宿主生成器、同级 SDK 检出或源码路径别名。将固定 URL 和锁文件提交到自己的工程，正常安装即取得同一发行物。UI 完整类型所需的 React、Radix 和 clsx 配套依赖在包的 `peerDependencies` 中列出，离线开发需另备依赖缓存。构建工具、Rust 运行库和 CLI 的实际下载与配套要求继续查询 `packaging`；SDK 和工具的唯一维护源是独立 [DeviceForge-SDK 仓库](https://github.com/CitricAcidCandy/DeviceForge-SDK)。
 
 ```typescript
 import type { HostContext, WebPlugin, PointRef } from '@deviceforge/plugin-sdk';
@@ -95,7 +101,7 @@ handle.update({
 
 贡献状态为 `waiting/version_mismatch/invalid/active`；扩展点尚未存在时等待，精确版本不匹配不激活，数据按扩展点 Schema 校验。`catalog()` 只提供可序列化元数据，`list(ref)` 还保留本地 `payload`，供该扩展点的渲染器消费。渲染器只渲染 `active` 项；追加项按顺序与稳定 ID 排列，替换项必须显式 `select(ref,id)`，不能按装载顺序抢占。
 
-可选 `selection(ref)` 只读返回已选择的贡献标识，即使提供者暂时不可用；`selected(ref)` 仍只返回当前可用的选择。因此，卸载或依赖撤销不能冒充用户执行了 `select(ref,null)`，也不能把暂缺状态持久保存为用户清空。原已选的同一贡献恢复时可以重新挂载，但未选过的新贡献不得自动接管，业务写入也不得重放。旧宿主可能缺少 `selection`，调用前先判断能力；当前开发源码已提供，本地SDK发行包是否包含该可选声明须按实际发行物核对，不能拿旧包版本号推断。
+可选 `selection(ref)` 只读返回已选择的贡献标识，即使提供者暂时不可用；`selected(ref)` 仍只返回当前可用的选择。因此，卸载或依赖撤销不能冒充用户执行了 `select(ref,null)`，也不能把暂缺状态持久保存为用户清空。原已选的同一贡献恢复时可以重新挂载，但未选过的新贡献不得自动接管，业务写入也不得重放。旧宿主可能缺少 `selection`，调用前先判断能力；上列公开 SDK 包已包含该可选声明，不能拿同版本早期归档推断当前能力。
 
 `payload` 可以承载组件、函数或对象，但它的具体形状必须由扩展点提供者公开约定，并由消费方验证。它不进入跨端目录、持久布局或 JSON 数据，不代表自动具备设备控制权。更新数据不改变贡献身份；结构或 JSON 校验失败时不覆盖旧值，符合 JSON 但不符合扩展点 Schema 的更新会保留为 `invalid` 项，不再参与渲染。
 
