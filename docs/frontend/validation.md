@@ -1,5 +1,126 @@
 # 浏览器插件调试、验证与交付
 
+## 开发者先登记可调用能力
+
+调试器不会自动把普通函数变成“调试动作”。浏览器的可调用入口来自插件 `contributions` 或 `context.extensions.register()` 登记的 `commands/services`，不是 `context.debug` 的语义信息。六类贡献 `components/modules/commands/services/beforeTaskSubmit/themes` 共用 ID 唯一性检查：同一命令和服务也必须使用不同 ID，且均以最终浏览器组件 ID 加句点开头。具体格式与安装前声明查询 `manifest` 主题。
+
+| 接口 | 供调用者观察或执行的内容 |
+| --- | --- |
+| `extensions.register({commands,services})` | 公开可调用入口；`debug_inspect` 的贡献目录及 `debug_invoke` 消费这些登记 |
+| `debug.registerNode` / `debug.emit` | 主动登记的语义节点与事件，不创建可执行命令 |
+| `debug.registerDataSource` | 主动公开的数据投影、修订与可选写入，通过数据目录及读写工具消费 |
+| 普通已挂载 DOM | 通过界面树、查询与 `debug_ui_action` 操作，与公开命令目录是两条路径 |
+
+公开 SDK 没有 `debug.registerAction` 接口。不要编造它，也不要把 `registerNode` 或事件名称当成 `debug_invoke` 的入口 ID。
+
+下面是可构建为浏览器 ESM 的完整入口示例。开发清单提供最终身份，打包器把身份传入默认导出的工厂；它只返回固定样本，不联网、不读取用户数据、不提交任务。命令本身没有 `inputSchema` 属性，回调必须检查输入；服务另公开相同输入 Schema，便于调用前发现约束。
+
+```typescript
+import type { Dispose, HostContext, HostResult, JsonValue, WebPlugin } from '@deviceforge/plugin-sdk';
+
+interface Identity { readonly id: string; readonly version: string; readonly apiVersion: 2 }
+
+export default function createPlugin({ id, version, apiVersion }: Identity): WebPlugin {
+  return {
+    id, version, apiVersion, panels: [],
+    async activate(context: HostContext): Promise<void> {
+      const extensions = context.extensions;
+      if (!extensions?.register) throw new Error('宿主未提供公开能力登记，请检查宿主版本');
+      const inputSchema: JsonValue = {
+        type: 'object',
+        properties: { sample: { type: 'string', enum: ['guide-check'] } },
+        required: ['sample'], additionalProperties: false,
+      };
+      const outputSchema: JsonValue = {
+        type: 'object',
+        properties: { ok: { const: true }, sample: { const: 'guide-check' } },
+        required: ['ok', 'sample'], additionalProperties: false,
+      };
+      async function readSample(
+        input: JsonValue, _caller: HostContext, signal: AbortSignal,
+      ): Promise<HostResult<JsonValue>> {
+        context.signal.throwIfAborted();
+        signal.throwIfAborted();
+        if (input === null || typeof input !== 'object' || Array.isArray(input) ||
+            Object.keys(input).length !== 1 || input.sample !== 'guide-check') {
+          throw new Error('输入必须是只含 sample: guide-check 的对象');
+        }
+        return { data: { ok: true, sample: input.sample }, logId: null };
+      }
+      context.signal.throwIfAborted();
+      const release: Dispose = extensions.register({
+        commands: [{
+          id: `${id}.commands.read_sample`, title: '读取调试样本', execute: readSample,
+        }],
+        services: [{
+          id: `${id}.services.read_sample`, version: '1',
+          inputSchema, outputSchema, invoke: readSample,
+        }],
+      });
+      context.onDispose(release);
+    },
+  };
+}
+```
+
+示例在激活阶段登记，因此启用并激活成功后，无需打开页面即可发现入口。若把登记放在 `mount` 内，页面未挂载前目录可以为空；挂载失败或所属作用域释放后，已登记入口应撤销。不要同时在激活和每次挂载中重复登记相同 ID。多实例需要共享插件级入口，或为各实例生成仍在本插件命名空间内的独立 ID，并释放各自登记。
+
+## Agent发现与调用的最小流程
+
+先通过部署者提供的公开 `/api/v2/debugger/capabilities` 核对当前调试能力，并以 MCP `tools/list` 核对工具名称、输入 Schema 和分页后的完整目录。工具存在不代表所选目标支持它；指南或 SDK 包更新也不代表当前运行宿主已升级。
+
+以下 JSON 是逐条调用 MCP `tools/call` 时使用的 `params`，不是一次批量执行。占位符必须替换为前一步真实返回值，不猜会话 ID、浏览器实例或代次；目录中的 `generation` 按字符串原样使用。先发现目标：
+
+```json
+{"name":"deviceforge.debug_targets","arguments":{}}
+```
+
+从实际 `browser_targets` 中明确选中自己的插件、浏览器实例与当前代次，再打开会话：
+
+```json
+{"name":"deviceforge.debug_session","arguments":{"action":"open","target":{"target_kind":"browser","plugin_id":"<实际插件ID>","instance_id":"<实际浏览器实例ID>","generation":"<实际代次>"}}}
+```
+
+使用返回的会话读取本代目录；回执 `state=succeeded` 后检查 `response.catalog.commands/services`，选择实际存在的 ID，服务还需读取精确 `version` 和输入 Schema：
+
+```json
+{"name":"deviceforge.debug_inspect","arguments":{"session_id":"<open返回的session_id>","parameters":{}}}
+```
+
+对上面的固定样本入口显式调用一次。下例 ID 的前缀必须替换为当前目录实际返回的最终组件 ID；`include_result:true` 用于取得此已知无敏感内容的样本结果，不能无差别复制业务返回值：
+
+```json
+{"name":"deviceforge.debug_invoke","arguments":{"session_id":"<自己的session_id>","parameters":{"kind":"command","id":"<实际组件ID>.commands.read_sample","input":{"sample":"guide-check"},"confirmed":true,"allow_unknown_side_effects":true,"include_result":true}}}
+```
+
+如验证服务，把上例 `parameters` 改为下列对象；不要把服务版本填入命令调用：
+
+```json
+{"kind":"service","id":"<实际组件ID>.services.read_sample","version":"1","input":{"sample":"guide-check"},"confirmed":true,"allow_unknown_side_effects":true,"include_result":true}
+```
+
+只在最终回执 `state=succeeded` 后使用 `response`，再核对样本返回值。派发、超时或未知不代表业务成功，也不代表可以重新调用；已取得 `command_id` 时先读取原回执：
+
+```json
+{"name":"deviceforge.debug_command","arguments":{"session_id":"<自己的session_id>","command_id":"<该次调用返回的command_id>"}}
+```
+
+结束时关闭自己的会话，不关闭其他 Agent 或调试器面板的会话：
+
+```json
+{"name":"deviceforge.debug_session","arguments":{"action":"close","session_id":"<自己的session_id>"}}
+```
+
+### 目录为空或看不到动作时
+
+先分清三种内容：公开命令／服务目录、普通 DOM 的可操作节点、已经执行的调试记录。兼容官方调试器的“手动检查 → 调用公开能力”用于调用已登记入口，“技术详情”的公开能力／槽位／路由用于查看目录；首页“调试过程”显示已有执行记录，不会因为安装或登记成功就自动执行并生成步骤。这是功能含义说明，不代表当前页面按钮已完成现场验收。
+
+- `commands/services` 为空：检查是否真的登记，而非仅写了普通函数、语义节点或事件；确认登记放在激活还是挂载阶段，再确认该阶段是否成功、依赖是否就绪、登记是否已被作用域撤销。安装成功不等于页面挂载成功。
+- 登记抛错：按具体 ID、类别及位置检查跨类型重复、最终组件前缀和格式；不能依靠反复打开页面消除同一声明错误。用 `sdk` 与 `manifest` 主题核对规则。
+- 选错实例或换代：重新读取目标，显式选择新代；不能把另一标签页、旧代或尚未挂载页面的目录当作当前页面事实。
+- 没有命令仍可能有 DOM 操作：用 `debug_inspect` 的真实挂载根读取 `debug_ui_tree`，再用 `debug_ui_query/debug_ui_action`；节点目标使用查询返回的真实 ID、代次和修订，不猜目标。具体对象结构按实际工具 Schema 与下文流程填写。
+- 返回 `debugger_capability_unavailable`：保留本次工具名、输入类别与日志 ID，核对该工具及所选目标的实际能力；该错误本身不能证明插件没有命令，也不能据此判断命名空间冲突。服务器目标不提供浏览器界面、登记数据与自动步骤工具；调试配套插件的页面时应选择真实的浏览器组件目标，服务器操作及服务则沿原任务入口调用。无挂载根或能力缺失时明确报告，不能写成已执行成功。
+
 ## Agent自动调试与插件数据
 
 兼容宿主新增 `deviceforge.debug_data_catalog/data_read/data_write/automation_run/command`。先查询实际能力，不把源码指南更新视为已运行宿主升级。数据及步骤执行目前需要浏览器目标；服务器业务继续沿原公开服务和Job。
@@ -11,6 +132,18 @@
 自动调试参数为 `{session_id,parameters:{confirmed,stop_on_failure?,steps:[{id,label?,tool,parameters,bind?}]}}`，最多三十二步，内部共享二十八秒、单步十秒。可选 `label` 由Agent提供业务名称，1到80个Unicode字符、不得为空白或含控制字符；它仅用于展示，不替代稳定 `id`，不改变执行状态。允许检查、数据目录与读写、界面树、查询、断言、动作和公开入口试调用；禁止重载、嵌套和人工拾取。`bind.target_from_step` 只接续更早完整唯一界面查询的节点，`bind.revision_from_step` 只接续更早同源读取的修订，不支持脚本或任意对象路径。计划确认不替代动作自身确认。
 
 `deviceforge.debug_activity` 使用 `{session_id,limit?,before?,command_id?}` 只读观察明确目标的留存调用。列表默认20、最多50条，按种类、实例、插件和代次隔离，不返回原参数、原会话ID或批量结果正文；指定命令后读取单条已有脱敏回执。记录可能淘汰且不跨重启保留，`gap`和`retained_only`不省略。该入口不续期、不派发，原 `debug_command` 仍只读取属于原会话的命令。
+
+### 在调试器中查看 Agent 的实际调试操作
+
+先让 Agent 通过 `debug_targets` 明确目标并用 `debug_session` 建立自己的会话，再用 `debug_invoke`、`debug_automation_run`、界面或已登记数据工具执行已确认的调试操作。支持目标级活动接线的调试器选择**相同目标种类、插件、浏览器实例和代次**后，可在“调试过程”只读查看这些原有调用与回执；打开调试器不要求 Agent 交出原会话，也不会重新执行动作。自动计划的步骤名称是调用方提供的展示标签，只在真实计划执行后对应实际回执，不是 Agent 推理内容。
+
+浏览器仍沿已有 `commands/services` 登记公开入口，不需要另造 `debug.registerAction`。语义节点、事件、普通 DOM 动作和公开入口的区别沿用本主题前文。普通 MCP 直接调用插件业务工具不保证进入这份调试活动历史，因此不能把它称为全局 MCP 调用录制；没有活动也不能直接推出插件没有被其他入口调用。“Agent”等来源标签只是调用来源说明，不证明某个 Agent 的真实身份或在线状态，不展示思考或推理过程。
+
+服务器 `debug_invoke` 仍返回原 Job，提交已受理不等于业务完成；活动详情只能只读观察该 Job 的状态和日志关联摘要，不复制任务原始输入或输出，也不额外提交任务。服务器活动详情可提供 `response.job` 的 `id/status` 摘要，`log_id` 仅实际可用时返回。需核对完整业务结果时通过原 Job 查询入口继续确认。未知、断线或取消等待后先查已有回执与 Job，不自动重放。
+
+服务器单次 `debug_invoke` 可选 `parameters.label`，显式名称优先；省略时取当前精确操作标题，服务取精确匹配提供者及代次后绑定操作的标题，无有效标题再回退技术描述。它只是原活动和历史的展示元数据，不改变真实执行状态或原 Job。每次调用独立记录，服务器不支持 `debug_automation_run`，不能把多次调用伪造成宿主自动计划。该参数不适用于浏览器 `debug_invoke`；浏览器自动计划仍使用 `steps[].label`。服务器参数示例及名称的完整输入限制见后端 `validation` 主题。
+
+上述活动展示取决于实际宿主和调试器是否已采用对应接线。兼容的指南正文可在线更新，更新文档本身无需重启；新增宿主接线仍须采用新构建。读取指南时核对 `guide_source/guide_revision`；正文存在不证明当前宿主或调试器已采用对应接线，发布与当前采用状态由部署者的宿主实施记录维护。
 
 回执成功还须检查 `response.status` 和各步骤状态。派发不等于业务成功；数据回读是证据，当前没有通用数据相等断言或自动回滚。结果未知或取消后停止后续步骤，不自动重放；使用 `{session_id,command_id}` 调用只读 `deviceforge.debug_command` 查询已保留回执。超时只结束等待，可信旧回调可能继续执行，最终写入仍须插件原子比较修订。
 

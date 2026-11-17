@@ -2,6 +2,8 @@
 
 ## 推荐：只维护 manifest.json
 
+源码可按插件目录内 frontend/、backend/ 分开，组件 root 指向对应自有目录；单端可直接使用插件根。类型由 components[].kind 与入口 runtime 明确标识，不增加另一份业务清单或新的清单版本。组件原 ID 是配置与升级身份，改成复合发布时保留它；已存在独立安装通过显式迁移预检／确认合并，不能改名或先卸载规避，完整步骤查询 packaging。
+
 开发清单统一命名为 `manifest.json`，以 `manifest_version:1` 标识。开发者只维护这一份 DeviceForge 声明；自己的 Cargo.toml、package.json 只负责语言依赖和构建。运行清单、分发用 package.json、market.json、dependencies.json 和最终 release.json 由 `deviceforge plugin pack` 生成，不在源工程重复维护。先自行构建，再打包；工具不执行构建脚本。
 
 以下是前后端配套功能的完整声明结构：

@@ -2,7 +2,9 @@
 
 推荐流程：只维护一份 manifest.json 开发清单（manifest_version:1），在 components 中声明服务器/浏览器能力，在 market 中声明展示资料；两者完整结构、默认值和示例均由 manifest 主题直接提供。使用带 plugin pack 命令的 DeviceForge CLI 发行包自动生成运行、市场和发布清单，再 plan/publish 或离线安装；命令详见 packaging 主题。Cargo.toml/package.json 仅保留语言工具链职责，不重复维护 DeviceForge 元数据。
 
-使用 MCP 工具 `deviceforge.get_plugin_development_guide`，指定 `target=backend` 与所需 `topic` 获取正文；配套开发使用 `target=fullstack`。响应给出宿主版本、指南版本和公开协议版本，知识随宿主版本交付。
+使用 MCP 工具 `deviceforge.get_plugin_development_guide`，指定 `target=backend` 与所需 `topic` 获取正文；配套开发使用 `target=fullstack`。响应给出宿主版本、指南版本和公开协议版本；宿主内置正文作为离线基线，支持指南更新的宿主也可采用已验证的兼容快照。
+
+指南查询只读且不联网。仅当实际 MCP 工具目录包含 `deviceforge.update_plugin_development_guide` 时，才可向该工具显式传入 `{"action":"update"}` 更新指南，或传入 `{"action":"reset"}` 不联网恢复内置正文；两种动作均不创建业务任务。当前知识版本、来源和内容身份以查询响应外层的 `guide_version`、`guide_source`、`guide_revision` 与 `guide_diagnostics` 为准，文档项仍仅有 `target/topic/content`。旧宿主没有更新工具时保持内置指南；在线资料未发布或更新失败时保留当前可用正文。指南更新不会增加宿主能力，新能力仍以实际公开目录为准。
 
 插件在自己的独立工程开发，无需获取宿主源码。直接使用 MCP 返回的 `documents.content`、公开操作目录与 JSON Schema，按主题继续查询其他正文。公开 SDK 是可选开发依赖，取得可独立消费的 SDK 开发包后才使用；没有开发包时可按本指南 JSON 协议实现，`examples` 的 Node.js 完整包不依赖 SDK。
 

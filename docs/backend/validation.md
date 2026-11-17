@@ -20,7 +20,7 @@
 
 - 通过原市场本地导入或原公开 MCP 安装能力导入，不提供独立 `debug_upload/debug_install`，不发布开发包到市场。
 - `deviceforge.debug_session` 使用 `action=open,target`，服务器目标为 `target_kind=server` 和真实 `plugin_id/generation`，`instance_id` 省略或为空；版本与代次来自当前目录。`debug_inspect` 读取本代公开操作、服务精确版本、Schema 和可用性，历史清理告警不封锁独立新调用。
-- `deviceforge.debug_invoke` 的 `parameters` 支持 `kind=operation/service,id,input,confirmed=true,allow_unknown_side_effects=true`；服务另需精确 `version`，普通操作不接收服务版本。普通操作 ID 使用公开完整名，例如 `plugin.demo_debugger_server.echo`。检查归属及真实代次后只提交原任务，返回原 `job_id/operation/status`，通过原 Job 入口查询终态或显式取消。**服务器不接受 `include_result`**；它仅用于浏览器命令／服务，默认 `false`，显式 `true` 才复制脱敏 JSON。不得以浏览器结果选项改变服务器 Job 模型。
+- `deviceforge.debug_invoke` 的 `parameters` 支持 `kind=operation/service,id,input,confirmed=true,allow_unknown_side_effects=true`，可选 `label`；服务另需精确 `version`，普通操作不接收服务版本。普通操作 ID 使用公开完整名，例如 `plugin.demo_debugger_server.echo`。检查归属及真实代次后只提交原任务，返回原 `job_id/operation/status`，通过原 Job 入口查询终态或显式取消。**服务器不接受 `include_result`**；它仅用于浏览器命令／服务，默认 `false`，显式 `true` 才复制脱敏 JSON。不得以浏览器结果选项改变服务器 Job 模型。
 - `debug_reload` 使用 `parameters:{confirmed:true}` 委托原串行排空重载流程，默认 `follow=false`。旧会话 `target_changed` 后，重新查询真实新代次，再用 `debug_session` 的 `action=select,session_id,target` 明确选择或新开会话；旧节点和旧引用不能复用，超时或断线不自动重放。整套安装更新仍走原完整发布入口，不能将运行重载当作完整发布更新证据。
 - UI 树、语义查询及节点动作需要明确的浏览器实例。无源码断点、单步、任意脚本执行或私有文件浏览；不要求额外常驻调试进程。结束时只关闭自己的会话。
 
@@ -29,6 +29,26 @@
 `deviceforge.debug_report` 参数为 `{session_id,parameters:{export:'none'}}`，`export` 取 `none/json/markdown`，默认 `none`；可选 `parameters.logs` 携带日志 ID、Job ID、关键词、排序、游标和页大小。返回 `{report,artifact}`，不导出时产物为空，显式导出写入原产物存储，返回元数据和下载 URL。报告保留覆盖、脱敏、限制与代次信息；无产物存储、代次变化或回执未确认时明确报错，不自动重复写入。报告中的浏览器快照目录及 `continuation` 通过 **`deviceforge.debug_ui_tree`** 的 `root_id/snapshot_id/offset/limit` 继续同一冻结快照，沿 `tree.page.nextOffset` 翻页，不将续页参数传给 `debug_report`。服务器目标本身不生成 UI 树。
 
 配套浏览器工具通过公共 `host.debugger@1` 服务消费相同合同：`status/capabilities` 查询、`start` 显式连接、`reconnect` 需 `input:{confirmed:true}`；`call` 携带公开工具 `name/input`；`installation` 查询安装构建；`logs` 仅简单日志 ID／关键词／排序搜索；`focus` 携带明确 `target_kind/plugin_id` 或候选并要求官方面板已启用。可选 `context.debug` 只主动登记语义节点、资源与事件，不读取任意私有状态。
+
+### 在调试器中查看 Agent 的服务器调用
+
+Agent 先读取当前目标并用 `debug_session` 明确选择 `target_kind="server"`、实际插件 ID 和代次，再通过 `debug_invoke` 调用已公开的操作或服务。支持目标级活动接线的官方调试器选择同种类、同插件和同代次后，在“调试过程”只读查看已有调用；不获取 Agent 原会话的控制权，不新建执行器，也不重放操作。浏览器目标还必须匹配浏览器实例；其自动步骤、界面及已登记数据工具沿同一目标的原调试记录观察。
+
+服务器 `debug_invoke` 可用 `parameters.label` 提供业务名称。显式值优先，必须是字符串，长度为 1–80 个 Unicode 字符，不能全为空白或含控制字符；`null` 拒绝，不自动裁去首尾空白，也不支持 `title` 别名。省略时，操作使用当前精确插件及代次的 `operation.title`；服务先精确匹配 `id/version/provider/generation`，再取其绑定操作的标题；没有有效匹配标题时回退技术描述。名称只用于原活动步骤及命令历史展示，不增加直接 Job 响应字段，不改变确认要求、权限、实际执行或结果状态。
+
+下例是 MCP `tools/call` 的 `params`，展示服务器操作的正确参数嵌套。先按当前公开目标打开自己的服务器会话，用 `debug_inspect` 取得实际完整操作 ID 和输入 Schema；替换占位标识、业务名称及输入后才能调用。示例的 `input:{}` 仅适用于 Schema 接受空对象的操作，不能省略真实必填输入。普通操作不传 `version`，也没有 `ack` 字段。
+
+```json
+{"name":"deviceforge.debug_invoke","arguments":{"session_id":"<服务器会话open返回的session_id>","parameters":{"kind":"operation","id":"<公开目录中的实际完整操作ID>","input":{},"confirmed":true,"allow_unknown_side_effects":true,"label":"读取当前配置"}}}
+```
+
+每次服务器 `debug_invoke` 仍是独立调用、逐条记录并关联本次原 Job。服务器目标不支持 `debug_automation_run`，不能把多次独立调用伪造成宿主执行的自动计划或步骤进度。上述单次调用的 `label` 仅针对服务器，不能据此向浏览器 `debug_invoke` 传同名参数；浏览器自动计划的步骤 `label` 是另一处已有契约。
+
+服务器调用保持原 Job 模型：提交受理或调试回执成功不等于 Job 已完成。活动详情只读补充原 Job 的状态及日志关联摘要，不复制任务输入或输出，不另提交任务；服务器活动详情可提供 `response.job` 的 `id/status` 摘要，`log_id` 仅实际可用时返回。真实终态和业务结果继续通过 `deviceforge.get_job` 等原入口确认。未知回执先查询，不能因活动尚无终态就自动再次调用。
+
+这份活动历史不是全局 MCP 调用录制：直接调用普通插件业务工具不保证出现在其中。标签仅说明调用来源，不证明 Agent 真实身份或在线，也不展示推理。配套浏览器仍使用已有 `commands/services` 登记入口，不能虚构 `debug.registerAction`。能力、留存、淘汰和目标换代按实际调试合同处理，不把空历史当成“从未调用”。
+
+兼容指南正文在线更新无需重启，但新增活动接线须采用新的宿主及调试器构建。读取指南时核对 `guide_source/guide_revision`；正文存在不证明当前宿主或调试器已采用对应接线，发布与当前采用状态由部署者的宿主实施记录维护。
 
 知识随兼容宿主发行，文档更新不表示旧运行服务已升级。独立 Node JSON 协议运行、单元测试和归档闭包只证明对应示例，不证明真实安装、官方面板、浏览器、设备或完整生产闭环。
 

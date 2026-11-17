@@ -20,6 +20,12 @@
 
 清单中的`state: prepared`记录材料生成时的本地准备状态，公开发布状态以以上发行页为准。Node.js要求22.18以上，Rust源码使用edition 2024；第三方依赖由包声明及锁文件指定，通过正常npm/Cargo渠道取得。当前提供GitHub附件渠道，尚未发布npm或crates.io；本版本CLI适用Windows x64。
 
+## contracts 0.1.1 独立发行
+
+[HTTP 契约 0.1.1](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/tag/contracts-v0.1.1)已独立发行，源码固定 `766331e42735419f887a72b962be430d7bd0119b`。[deviceforge-contracts-0.1.1.tgz](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/contracts-v0.1.1/deviceforge-contracts-0.1.1.tgz) 为 19,510 字节，SHA-256 `98939aa871cc833d7acf5f83dcbcb6d64eab67be79b9e16bf322186b293e100d`。公开三附件已匿名下载并核对，不覆盖 v0.1.0 附件。
+
+新增迁移预检／确认的 paths 类型，配置 revision 必填且可空。安装固定 HTTPS TGZ 后从 `@deviceforge/contracts/api` 消费声明；不升级 plugin-sdk、tools 或正在运行的宿主。旧 0.1.0 契约仍适用原能力，需要迁移端点类型时使用本次独立发行。CLI 发行物、指南和实际宿主版本分别核对，未发布到公共 npm 的包不按裸包名假设下载渠道。
+
 ## 所需材料
 
 | 开发目标 | 材料 | 使用方式 |

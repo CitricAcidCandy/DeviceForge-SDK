@@ -12,7 +12,7 @@ npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releas
 | --- | ---: | --- |
 | [浏览器 SDK 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-sdk-0.1.0.tgz) | 19,096 | `0be9e1ff26e647589a9facf6d61aafceba4ad8654f4da86f60054512d9208f53` |
 | [构建工具 0.1.1](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-plugin-tools-0.1.1.tgz) | 22,677 | `aa35fd46a39b3275a65499020bd93d4c4e02d138d8fab37864a7708c53218a01` |
-| [公开 HTTP 类型 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-contracts-0.1.0.tgz) | 18,576 | `53ab200f3bc04515d58e43edc8eaae1b47330bc720e348c32e68df85e661bb8b` |
+| [公开 HTTP 类型 0.1.1](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/contracts-v0.1.1/deviceforge-contracts-0.1.1.tgz) | 19,510 | `98939aa871cc833d7acf5f83dcbcb6d64eab67be79b9e16bf322186b293e100d` |
 | [Rust 运行库与示例源码 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-sdk-sources-0.1.0.zip) | 384,638 | `fdcfd9d29d4cb01860e838b1841097e64c163d36a09da49cf6f2ec4538d1afa8` |
 | [Windows x64 CLI 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz) | 24,224,285 | `5ce74e97abfe689462b1bba76b82088584a6400875c57f06089c1141f61d6b11` |
 
@@ -67,6 +67,28 @@ console.log(result.buildId);
 
 ## 单一开发清单流程（推荐）
 
+### 单端与复合发布
+
+一个功能用一份 manifest.json 维护，components 同时含 browser 与 server 即复合插件，只有一种 kind 即单端插件。开发者可以按 frontend/、backend/ 组织自有源码，components[].root 指向对应目录；单端可直接以插件根为 root。目录名不决定类型，真正标识来自 components[].kind、入口 runtime 及最终 release.json，市场只显示一个完整功能条目。
+
+新官方交付按插件 ID 收敛固定目录：单组件直接放 component.tgz；多组件按 kind 分入 frontend/、backend/，同类多个组件仍按各自 ID 命名。release.json、market.json 和 plugin.zip 是整套交付入口，blobs 保存清单引用的摘要资源。第三方仍消费标准格式 2 清单与资源闭包，不需要模仿官方源码目录，不修改市场资源 API 或安装协议。复合安装继续保留各组件原 ID，不能通过重新命名组件规避旧配置或归属冲突。
+
+### 旧组件显式合并
+
+支持迁移的新 CLI 与宿主可将旧独立组件合并到完整发布；正在运行的旧宿主或旧 0.1.0 CLI 不因阅读本指南获得此能力。先检查 CLI 帮助及宿主公开端点。市场在有效完整发布详情提供「合并旧安装」，先预检，再由用户确认；普通启动不会自动合并、覆盖用户配置或重新安装刻意卸载项。
+
+预检使用 POST /api/v2/plugin-installations/migration-plan，输入 {source: InstallSource}，返回目标 id/version/revision、sources、configurations、enabled、plan_digest 和 issues。每项配置的 revision 必填且为 string 或 null；null 仅表示没有配置修订，不能写成“已验证无变化”。核对旧组件、目标启停、配置修订和阻断问题后，POST /api/v2/plugin-installations/migrate 原样提交 {plan,confirmed:true}，202 返回 installation.migrate 的 Job；受理不是成功。
+
+CLI 无确认参数时只预检，例如 `deviceforge plugin migrate marketplace@latest --marketplace-url http://192.168.50.41:7040`；核对后加 `--confirm 实际plan_digest`。CLI 会重新预检并比对摘要，变化时拒绝提交；不能自动换成新摘要。运行结果未知时仅沿原 Job 查询；没有 Job 时只读核对安装目录，不重发迁移，不先卸载旧组件。配置、停用意图、组件归属及并发修订仍由宿主校验。
+
+自有 TypeScript 工程可安装已公开的新类型：
+
+```powershell
+npm install --save-dev https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/contracts-v0.1.1/deviceforge-contracts-0.1.1.tgz
+```
+
+通过 `import type { paths } from '@deviceforge/contracts/api'` 索引上述公开端点，不复制 DTO 或导入宿主源码。类型包不是插件安装包，也不会升级正在运行的宿主。
+
 在自己的工程只维护 manifest.json（manifest_version:1），结构及 market 全部字段查询 manifest 主题。部署者提供的 DeviceForge CLI 发行包须在 --help 中含 plugin pack，不假设公共 registry 已发布，不需要宿主源码。先把 TypeScript/React 构建成 ESM，再运行：
 
 ```powershell
@@ -75,11 +97,15 @@ deviceforge plugin plan dist-plugin --server http://127.0.0.1:7040
 deviceforge plugin publish dist-plugin --server http://127.0.0.1:7040
 ```
 
-pack 自动生成组件 package.json、plugin.json、market.json 及按需 dependencies.json，再生成组件 TGZ、完整 release.json、blobs、完整离线 ZIP 和 pack-report.json。源工程不被改写，不执行构建脚本，输出须为新目录（默认 dist-plugin，父目录须存在）；--platform 可指定已构建目标，默认当前系统/架构。浏览器公共 ESM 说明符须保持 external；本工具不替代你的 bundler。
+pack 自动生成组件 package.json、plugin.json、market.json 及按需 dependencies.json，再生成组件 TGZ、完整 release.json、blobs、完整离线 ZIP 和 pack-report.json。源工程不被改写，不执行构建脚本；--platform 可指定已构建目标，默认当前系统/架构。支持固定覆盖的新 CLI 默认复用 dist-plugin（父目录须存在）：先校验来源、身份、平台及旧交付完整性，再以固定暂存和回滚提交；未知目录或未确认回执拒绝覆盖，同目标并发互斥。旧 0.1.0 CLI 仍要求新目录，不能靠新建随机目录回避当前构建归属。浏览器公共 ESM 说明符须保持 external；本工具不替代你的 bundler。
+
+贡献 ID 静态校验是新 CLI 与宿主的源码候选能力：本主题上表的固定 `v0.1.0` CLI 发行附件尚不能据此视为已支持，也没有额外已发布下载地址。取得支持该字段的新 CLI 和宿主后，可在唯一开发清单的浏览器组件添加 `components[].contributions`，按 `components/modules/commands/services/beforeTaskSubmit/themes` 分类列出 ID 字符串数组。CLI 校验最终组件前缀、格式及跨类型重复后，自动生成 `.deviceforge-contributions.json`；新宿主在安装发布目录前再次校验，不执行插件 JavaScript。完整示例和字段通过 `manifest` 主题取得。
+
+该表是生成产物，不需手写或放进 `files`，也不写入 `plugin.json`。缺少它的旧包继续兼容；表内未知字段、非字符串、错误身份、越界或重复 ID 则明确拒绝。静态声明只说明已声明 ID 合法，不证明实际代码一致，动态登记仍按真实贡献检查；不能把打包或安装成功说成工作台已启动。普通用户应把具体冲突 ID 和位置交给插件开发者，由其修正源工程并重打包，不能靠反复“重新打开工作台”消除同一声明冲突。
 
 包含准备提交功能的 CLI 还支持 `deviceforge plugin pack manifest.json --out dist-plugin --prepare-only true`。它返回 `state:prepared`、`receipt`、`staging` 与 `target`，只说明构建字节已经封口，不能据此宣称安装包已提交。让该命令退出后，用其返回的实际路径运行 `deviceforge plugin finalize 回执.json`；最终逐成员核对大小、SHA-256、清单与 ZIP 后才返回 `state:completed`。普通 `pack` 不要求改用此流程，旧 CLI 也不承诺提供新参数。
 
-准备流程不覆盖已有目录。失败或结果未知时保留回执和暂存，重新读取实际状态，不自动重打包或重复业务操作；源已消失且最终目标与原回执完整一致时，`finalize` 只报告原提交完成。不要删除未知占用者或将暂存目录当成正式发布。需要原生目录提交的 Windows 环境使用已安装 PowerShell 7 的现行执行策略，不修改策略或启动用户服务。CLI 发行物和正在运行的宿主指南分别更新，源码存在不代表部署版本已具备。
+准备流程不会提前覆盖正式目录；完成核验后的 finalize 才提交同目标替换。失败或结果未知时保留回执和固定暂存，沿原回执重新读取实际状态，不自动重打包或重复业务操作；源已消失且最终目标与原回执完整一致时，finalize 只报告原提交完成。不要删除未知占用者或将暂存目录当成正式发布。需要原生目录提交的 Windows 环境使用已安装 PowerShell 7 的现行执行策略，不修改策略或启动用户服务。CLI 发行物和正在运行的宿主指南分别更新，源码存在不代表部署版本已具备。
 
 身份包装入口 `.deviceforge-entry.js` 由打包器生成，属于合法包资源，无须重命名或再维护一份入口声明。正常点文件和点目录可以随已构建产物交付；`.`、`..` 和越界路径仍无效，`.deviceforge-package.json`、`.deviceforge-runtime.json` 是宿主保留元数据名，不作为自行交付的资源。
 

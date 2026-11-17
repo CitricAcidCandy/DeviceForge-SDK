@@ -2,9 +2,11 @@
 
 推荐流程：只维护一份 manifest.json 开发清单（manifest_version:1），在 components 声明入口、能力与配置，在 market 声明市场资料；完整字段、默认值和示例均由 manifest 主题直接提供。使用带 plugin pack 命令的 DeviceForge CLI 发行包生成运行、市场和发布清单，再 plan/publish 或离线安装，命令查询 packaging 主题。自己的 package.json 只负责依赖和构建，DeviceForge 身份与版本不用重复填写。
 
-本指南对应 DeviceForge 浏览器插件 SDK v2（`apiVersion: 2`），内容随宿主编译发布。它描述当前公开开发契约；运行时是否提供可选能力仍须检查实际上下文与扩展目录。需要完整可打包入口时读取 `examples`，清单、SDK、生命周期、打包与验证分别读取同名主题。
+本指南对应 DeviceForge 浏览器插件 SDK v2（`apiVersion: 2`），宿主内置正文作为离线基线，支持指南更新的宿主也可采用已验证的兼容快照。它描述公开开发契约；运行时是否提供可选能力仍须检查实际上下文与扩展目录。需要完整可打包入口时读取 `examples`，清单、SDK、生命周期、打包与验证分别读取同名主题。
 
 插件在自己的独立工程开发，无需获取宿主源码。通过 `deviceforge.get_plugin_development_guide` 按主题取得 `documents.content` 正文，以公开 HostContext、操作目录、JSON Schema 和宿主提供的公共 ESM 入口接入。
+
+指南查询只读且不联网。仅当实际 MCP 工具目录包含 `deviceforge.update_plugin_development_guide` 时，才可向该工具显式传入 `{"action":"update"}` 更新指南，或传入 `{"action":"reset"}` 不联网恢复内置正文；两种动作均不创建业务任务。当前知识版本、来源和内容身份以查询响应外层的 `guide_version`、`guide_source`、`guide_revision` 与 `guide_diagnostics` 为准，文档项仍仅有 `target/topic/content`。旧宿主没有更新工具时保持内置指南；在线资料未发布或更新失败时保留当前可用正文。指南更新不会增加宿主能力，仍以实际上下文和目录为准。
 
 知识范围包括开发流程、公开能力与接口、约束、生命周期、调试和发布要求。`overview` 介绍能力与开发顺序，`manifest` 描述声明约束，`sdk` 提供公开接口，`lifecycle` 说明加载、挂载和清理，`examples` 提供示例，`dependencies` 描述共享依赖，`packaging` 说明发布要求，`validation` 提供调试流程与结果核对。正文直接交付，不包含宿主源码位置或文档物理地址。
 

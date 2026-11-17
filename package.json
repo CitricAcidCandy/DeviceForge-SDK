@@ -11,6 +11,7 @@
     "build:tools": "tsc -p browser/tools/tsconfig.json",
     "build": "npm run build:sdk && npm run build:tools",
     "pack:browser": "npm run build && node browser/pack.ts",
+    "pack:guide": "node scripts/guide-snapshot.mjs",
     "prepare:release": "node scripts/prepare-release.ts",
     "check": "tsc -p browser/tools/tsconfig.json --noEmit"
   },

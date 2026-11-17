@@ -2,6 +2,8 @@
 
 ## 推荐：只维护 manifest.json
 
+源码可按插件目录内 frontend/、backend/ 分开，组件 root 指向对应自有目录；单端可直接使用插件根。类型由 components[].kind 与入口 runtime 明确标识，不增加另一份业务清单或新的清单版本。组件原 ID 是配置与升级身份，改成复合发布时保留它；已存在独立安装通过显式迁移预检／确认合并，不能改名或先卸载规避，完整步骤查询 packaging。
+
 开发者只维护 `manifest.json`，以 `manifest_version:1` 标识。`deviceforge plugin pack` 自动生成分发 package.json、plugin.json、market.json、dependencies.json、组件 TGZ 和完整 release.json；这些文件不需要在源工程重复编辑。自己的 package.json 只负责语言依赖和构建。以下是一个可配合独立 ESM 入口打包的完整声明：
 
 ```json
@@ -41,6 +43,7 @@
 | components[].package_name | 字符串，生成的 npm 包名 | 默认 deviceforge-plugin- 加组件 ID |
 | components[].files | 字符串数组，已构建文件或目录 | 必填，1–256 项，不用 glob |
 | components[].entrypoints | 以平台名为键、入口对象为值的对象 | 必填，1–32 项；浏览器固定 any |
+| components[].contributions | 六类贡献 ID 字符串数组的映射对象 | 可选，仅 browser；新静态校验声明，需支持该字段的 CLI 与宿主，详见下文发行边界 |
 | entrypoints.any.runtime/path | 字符串，运行时与相对组件根的入口 | 浏览器固定 runtime:browser，path 指向已构建 ESM |
 | components[].plugin.api_version | 整数，浏览器 SDK 版本 | 可选，默认且仅支持 2 |
 | components[].plugin.configuration | 配置对象，含版本、schema、defaults、apply_policy | 可选，通过公开配置能力消费；不放到 market.details 代替运行声明 |
@@ -116,11 +119,39 @@ market 是可选对象，支持以下全部字段。id/version/name/description/
 
 ## 贡献标识与可选字段
 
-面板、组件、模块、命令、服务、钩子和主题 ID 必须以 `<插件ID>.` 开头，并匹配 `^[a-z][a-z0-9._-]{0,199}$`。贡献 ID 不得重复；模块路由按插件命名空间判重，不同插件可各自使用 `/catalog`。同一插件的 `/a/b` 与 `/a-b` 会归一成相同页面键，必须避免此类碰撞。标题必须非空。模块 `route` 必须以 `/` 开头，不能以 `//` 开头，不能包含 `?`、`#` 或反斜线。
+面板、组件、模块、命令、服务、钩子和主题 ID 必须以 `<最终浏览器组件ID>.` 开头，并匹配 `^[a-z][a-z0-9._-]{0,199}$`，总长最多 200 个 ASCII 字符，不接受大写、中文或空白。多组件发布使用组件的最终 ID，不使用顶层功能 ID 代替。例如顶层 `data_manager` 的浏览器组件为 `data_manager.browser`，则 `data_manager.browser.commands.open_query_tab` 合法，`data_manager.commands.open_query_tab` 越出该组件命名空间。身份工厂应从参数 `id` 派生贡献 ID。
+
+`components/modules/commands/services/beforeTaskSubmit/themes` 六类运行时贡献共用唯一性检查，跨数组和后续登记也不能复用尚未撤销的 ID。命令与服务可以实现同一功能，但不能都使用 `data_manager.browser.open_query_tab`；分别采用 `data_manager.browser.commands.open_query_tab` 与 `data_manager.browser.services.open_query_tab`。服务版本不同不能消除 ID 冲突，释放所属登记后才可复用原 ID。`slot`、`point.id` 及其他目标引用可以属于外部插件，不受自有贡献前缀约束。
+
+模块路由按插件命名空间判重，不同插件可各自使用 `/catalog`。同一插件的 `/a/b` 与 `/a-b` 会归一成相同页面键，必须避免此类碰撞。标题必须非空。模块 `route` 必须以 `/` 开头，不能以 `//` 开头，不能包含 `?`、`#` 或反斜线。
 
 可选字段应按需省略：`components.mode` 缺省为 `append`，支持 `replace`；`beforeTaskSubmit.priority` 是可选安全整数；服务 `version` 为非空精确匹配字符串，不代表宿主支持 semver 范围；主题可选 `variables/css/colorScheme`。不要为未知字段凭空创造权限、依赖安装或后台能力声明。
 
 SDK 2 的 `extensions/devices/artifacts/taskHistory/themes` 是可选上下文字段；不能通过清单强制让旧宿主获得这些能力。运行时先检查所需字段，再查询实际服务或设备能力。
+
+### 可选的安装前贡献标识声明
+
+以下字段是**新 CLI 与宿主的源码候选能力**，不是既有 `v0.1.0` 固定发行 CLI 的已发布承诺。使用前须确认取得的 CLI 和部署宿主已支持；更新指南不会升级 CLI，也不会使旧宿主自动获得校验。浏览器 SDK 仍为 API 2，不要求修改运行时 `PluginContributions` 类型。
+
+在唯一 `manifest.json` 的浏览器组件中按需添加 `contributions`。下例仅列出组件片段，原 `files/entrypoints` 等必填项继续保留：
+
+```json
+{
+  "kind": "browser",
+  "id": "data_manager.browser",
+  "contributions": {
+    "modules": ["data_manager.browser.workbench"],
+    "commands": ["data_manager.browser.commands.open_query_tab"],
+    "services": ["data_manager.browser.services.open_query_tab"]
+  }
+}
+```
+
+`contributions` 只接受 `components/modules/commands/services/beforeTaskSubmit/themes` 六个可选键，值均为 ID 字符串数组；省略类别按空数组处理，未知键和非字符串元素拒绝。字段只适用于 `kind:browser`，不放入 `plugin`、`market.details` 或服务器组件。每个 ID 继续遵守最终组件前缀、格式和跨类型唯一规则；例如将命令 ID 原样复制到 `services` 数组会在打包或安装校验阶段失败。
+
+CLI 自动生成组件包根目录的 `.deviceforge-contributions.json`，结构为 `{schema_version:1,plugin_id:<最终组件ID>,contributions:{...}}`；开发者不另写第二份清单，也不把该元数据放入 `plugin.json`。根对象和贡献对象都拒绝未知字段，`schema_version` 必须为 1，`plugin_id` 必须匹配包内浏览器清单。新安装器发现该文件时必须校验全部声明，不能跳过错误；缺少它的旧包保持兼容。
+
+这张表只用于静态标识检查，安装器不会执行浏览器入口来试运行。旧包、未声明项和运行时才生成的贡献仍由实际注册校验兜底；合法声明不能证明代码没有另外生成错误 ID，安装成功也不等于动态功能已运行。错误应指出具体插件、ID、所属类别和位置；重复时同时指出首次声明位置，方便直接修改源工程后重新打包。
 
 ## 成套发布与基础配置
 

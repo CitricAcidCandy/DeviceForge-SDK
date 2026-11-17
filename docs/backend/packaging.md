@@ -2,6 +2,14 @@
 
 ## 单一开发清单流程（推荐）
 
+### 单端、复合发布与旧组件迁移
+
+自有插件目录可以按 frontend/、backend/ 组织两端，以 components[].root 引用构建产物；单端可以直接使用插件根。components[].kind 与 runtime 是实际类型标识，不能靠目录名推断。完整格式 2 发布可以只含单端，或同时含 browser/server；市场始终一个完整功能条目，原组件 ID 和配置身份保留，资源服务器与安装协议不变。新官方交付在固定插件目录将单组件直接放 component.tgz；多组件按 kind 分入 frontend/、backend/，同类多个组件仍按各自 ID 命名。均以 release.json、market.json、plugin.zip 和被引用 blobs 交付；第三方不必采用相同源码结构。
+
+已安装旧组件由支持迁移的新宿主显式处理：POST /api/v2/plugin-installations/migration-plan 输入 {source:InstallSource}，先核对目标、sources、configurations、enabled、plan_digest 与 issues。配置 revision 必填且可为 string 或 null；确认后 POST /api/v2/plugin-installations/migrate 提交原样 {plan,confirmed:true}，202 返回 operation 为 installation.migrate 的原 Job。查询原 Job 终态后才能确认结果；未知不重放，无 Job 时只读核对安装目录，不能从目录状态推断原提交成功。
+
+支持迁移的 CLI 执行 `deviceforge plugin migrate marketplace@latest --marketplace-url http://192.168.50.41:7040` 仅预检；加 `--confirm 实际plan_digest` 后重新预检，摘要相同且无阻断才提交。浏览器在完整发布详情提供「合并旧安装」。普通启动不自动合并或覆盖配置、启停意图；不要求先卸载旧组件。旧 CLI 0.1.0 或旧宿主不承诺这些接口，应以当前帮助和服务能力为准。公开 HTTP 类型已独立发行 contracts 0.1.1，固定 HTTPS 安装及类型索引用法继续查询 frontend/packaging。
+
 已公开 [Windows x64 DeviceForge CLI 0.1.0](https://github.com/CitricAcidCandy/DeviceForge-SDK/releases/download/v0.1.0/deviceforge-cli-0.1.0.tgz)：24,224,285 字节，SHA-256 `5ce74e97abfe689462b1bba76b82088584a6400875c57f06089c1141f61d6b11`，要求 Node.js 22.18 以上。它实际支持 `plugin pack` 和格式2离线包，尚未发布 npm registry；其他系统不要使用本版 Windows 二进制。在自己的工程安装固定附件并核对帮助：
 
 ```powershell
@@ -19,7 +27,7 @@ deviceforge plugin plan dist-plugin --server http://127.0.0.1:7040
 deviceforge plugin publish dist-plugin --server http://127.0.0.1:7040
 ```
 
-pack 只读取清单与 files 声明的已构建内容，不执行 npm/Cargo/设备工具，不修改源工程。输出必须为尚不存在的新目录，默认 dist-plugin，父目录须存在；platform 默认当前系统/架构。输出含 components/*.tgz、生成的 market.json、release.json、blobs、完整离线 ZIP 和 pack-report.json。组件 package.json/plugin.json/market.json 及按需 dependencies.json 自动生成在组件包内；身份与版本自动继承，摘要与大小取最终归档真实字节。开发清单不是宿主部署目录里的运行 manifest.json，不能直接拿来安装。
+pack 只读取清单与 files 声明的已构建内容，不执行 npm/Cargo/设备工具，不修改源工程。platform 默认当前系统/架构。支持固定覆盖的新 CLI 复用默认 dist-plugin（父目录须存在），核对来源、身份、平台和完整交付后通过固定暂存／回滚提交替换，同输出并发互斥；未知目录、异源目录或未确认提交拒绝覆盖。旧 0.1.0 CLI 的新目录限制继续按该版本帮助执行。输出含 components/*.tgz、生成的 market.json、release.json、blobs、完整离线 ZIP 和 pack-report.json；组件清单自动生成，版本和摘要来自最终真实字节。开发清单不能直接作为宿主部署清单安装。
 
 浏览器身份包装入口 `.deviceforge-entry.js` 由打包器生成，属于合法包资源，无须重命名或再手写入口声明。正常点文件和点目录可以随构建产物交付；`.`、`..` 和越界路径仍无效，`.deviceforge-package.json`、`.deviceforge-runtime.json` 是宿主保留元数据名，不作为自行交付的资源。
 

@@ -136,6 +136,14 @@ interface ServiceAccess {
 | `beforeTaskSubmit` | `{id,priority?,transform({operation,input},context,signal): Promise<{operation,input}>}` |
 | `themes` | `{id,title,variables?: Record<string,string>,css?: string,colorScheme?: 'light'或'dark'或'normal'}` |
 
+这六类贡献共用标识空间：`components/modules/commands/services/beforeTaskSubmit/themes` 中的 ID 不仅在各自数组内唯一，还必须跨类型唯一。初始 `contributions` 与后续 `context.extensions.register()` 也不能重复登记尚未撤销的 ID；所属登记释放后才可复用。服务的 `version` 用于调用时精确匹配，不能让重复的贡献 ID 变为合法。
+
+贡献 ID 必须以**最终浏览器组件 ID 加句点**开头，并匹配 `^[a-z][a-z0-9._-]{0,199}$`，即小写 ASCII 字母开头，总长最多 200 个 ASCII 字符，其余只允许小写字母、数字、句点、下划线和连字符。最终组件 ID 来自身份工厂收到的 `id`；配套发布的顶层功能 ID 不能代替它。例如功能为 `data_manager`、浏览器组件为 `data_manager.browser` 时，贡献前缀必须是 `data_manager.browser.`。
+
+命令可以调用服务，但要使用不同 ID：命令用 `data_manager.browser.commands.open_query_tab`，服务用 `data_manager.browser.services.open_query_tab`。把 `data_manager.browser.open_query_tab` 同时放入 `commands` 和 `services` 会冲突，即使它们分别代表同一功能的入口与实现。建议在身份工厂内从 `id` 派生上述后缀，不在业务代码复制包身份。`components[].slot`、扩展点 `point.id` 和被调用服务引用指向目标能力，不是本插件新登记的贡献 ID；引用外部命名空间是正常用法。
+
+支持新静态校验声明的 CLI 可从单一开发清单的 `components[].contributions` 生成贡献标识表，打包和安装阶段提前检查已声明 ID，完整字段通过 `manifest` 主题获取。它不是运行时 `PluginContributions` 对象，不承载函数，也不替代上述真实登记校验。此项目前属于源码候选能力，既有固定发行附件不能据此视为已更新；获取渠道与兼容边界查询 `packaging`。
+
 旧 `components` 接口只在已开放的具名槽位生效，其模式由对应适配器定义：`replace` 管理默认内容的释放与恢复，`append` 只往后追加。新 `extensions.points` 允许插件定义自己的扩展点；它与下列旧槽位兼容并存，不会自动把原页面内部变为开放渲染区域。当前产品开放的旧槽位：
 
 | 槽位 | 形态 | 允许模式 |
